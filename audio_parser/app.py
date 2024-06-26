@@ -5,7 +5,7 @@ import urllib.request
 from typing import TypedDict
 
 import boto3  # type: ignore
-from validators import is_mp3_url, validate_trackers  # type: ignore
+from validators import is_mp3_url, validate_event_body, validate_trackers  # type: ignore
 
 
 class Insight(TypedDict):
@@ -24,7 +24,13 @@ class LambdaResponse(TypedDict):
 def lambda_handler(event, context) -> LambdaResponse:
     request_id = context.aws_request_id
 
-    event_body = json.loads(event.get("body", "{}"))
+    print(f"Started request {request_id}")
+
+    try:
+        event_body = validate_event_body(event_body=event.get("body", "{}"))
+    except ValueError as e:
+        return create_error_response(status_code=400, message=str(e))
+
     interaction_url = event_body.get("interaction_url")
     trackers = validate_trackers(event_body.get("trackers"))
 
@@ -42,6 +48,8 @@ def lambda_handler(event, context) -> LambdaResponse:
         return create_error_response(status_code=500, message=str(e))
 
     insights = extract_insights(text=transcribed_text, trackers=trackers)
+
+    print(f"Ended request {request_id} with {len(insights)} insights.")
 
     response: LambdaResponse = {"statusCode": 200, "body": json.dumps({"insights": insights})}
     return response
@@ -79,7 +87,7 @@ def transcribe_mp3_file_to_text(job_name: str, interaction_url: str) -> str:
     max_retries = 50
     max_exponent_time = 10  # in seconds
     retries_count = 0
-    transcripted_url = None
+    url_to_transcribed_text = None
 
     while retries_count < max_retries:
         retries_count += 1
@@ -91,8 +99,8 @@ def transcribe_mp3_file_to_text(job_name: str, interaction_url: str) -> str:
 
         if job_status in ["COMPLETED", "FAILED"]:
             if job_status == "COMPLETED":
-                transcribed_url = job["TranscriptionJob"]["Transcript"]["TranscriptFileUri"]
-                print(f"Download the transcript from: {transcribed_url}")
+                url_to_transcribed_text = job["TranscriptionJob"]["Transcript"]["TranscriptFileUri"]
+                print(f"Download the transcript from: {url_to_transcribed_text}")
             else:
                 print(f"Transcription job failed for {job_name}")
                 raise ValueError("Transcription job failed")
@@ -100,8 +108,8 @@ def transcribe_mp3_file_to_text(job_name: str, interaction_url: str) -> str:
 
         time.sleep(2 ** min(retries_count, max_exponent_time))  # Exponential backoff
 
-    if transcripted_url:
-        with urllib.request.urlopen(transcribed_url) as response:
+    if url_to_transcribed_text:
+        with urllib.request.urlopen(url_to_transcribed_text) as response:
             data = response.read().decode()
             try:
                 return json.loads(data)["results"]["transcripts"][0]["transcript"]

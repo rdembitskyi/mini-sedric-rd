@@ -4,12 +4,12 @@ This project contains source code and supporting files for a serverless applicat
 
 - audio_parser - Code for the application's Lambda function.
 - events - Invocation events that you can use to invoke the function.
-- tests - Unit tests for the application code. 
+- tests - Unit tests for the application code.
 - template.yaml - A template that defines the application's AWS resources.
 
 The application uses several AWS resources, including Lambda functions and an API Gateway API. These resources are defined in the `template.yaml` file in this project. You can update the template to add AWS resources through the same deployment process that updates your application code.
 
-If you prefer to use an integrated development environment (IDE) to build and test your application, you can use the AWS Toolkit.  
+If you prefer to use an integrated development environment (IDE) to build and test your application, you can use the AWS Toolkit.
 The AWS Toolkit is an open source plug-in for popular IDEs that uses the SAM CLI to build and deploy serverless applications on AWS. The AWS Toolkit also adds a simplified step-through debugging experience for Lambda function code. See the following links to get started.
 
 * [PyCharm](https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html)
@@ -25,10 +25,8 @@ To use the SAM CLI, you need the following tools.
 * [Python 3 installed](https://www.python.org/downloads/)
 * Docker - [Install Docker community edition](https://hub.docker.com/search/?type=edition&offering=community)
 
-You can also pass the the role like this: 
-Pass this role's ARN to the template using the `Role` property like this: `Role: arn:aws:iam::654654431435:role/testing`.
-Make sure your user has the necessary permissions to create the resources defined in the template.
 
+Make sure your user has the necessary permissions to create the resources defined in the template.
 
 To build and deploy your application for the first time, run the following in your shell:
 
@@ -42,10 +40,8 @@ The first command will build the source of your application. The second command 
 * **Stack Name**: The name of the stack to deploy to CloudFormation. This should be unique to your account and region, and a good starting point would be something matching your project name.
 * **AWS Region**: The AWS region you want to deploy your app to.
 * **Confirm changes before deploy**: If set to yes, any change sets will be shown to you before execution for manual review. If set to no, the AWS SAM CLI will automatically deploy application changes.
-* **Allow SAM CLI IAM role creation**: Many AWS SAM templates, including this example, create AWS IAM roles required for the AWS Lambda function(s) included to access AWS services. By default, these are scoped down to minimum required permissions. To deploy an AWS CloudFormation stack which creates or modifies IAM roles, the `CAPABILITY_IAM` value for `capabilities` must be provided. If permission isn't provided through this prompt, to deploy this example you must explicitly pass `--capabilities CAPABILITY_IAM` to the `sam deploy` command. 
-* You can also pass the the role like this: 
-Pass this role's ARN to the template using the `Role` property like this: `Role: arn:aws:iam::654654431435:role/testing`.
-* Make sure your user has the necessary permissions to create the resources defined in the template.
+* **Allow SAM CLI IAM role creation**: Many AWS SAM templates, including this example, create AWS IAM roles required for the AWS Lambda function(s) included to access AWS services. By default, these are scoped down to minimum required permissions. To deploy an AWS CloudFormation stack which creates or modifies IAM roles, the `CAPABILITY_IAM` value for `capabilities` must be provided. If permission isn't provided through this prompt, to deploy this example you must explicitly pass `--capabilities CAPABILITY_IAM` to the `sam deploy` command.
+* **You can also pass the the role like this:**: `Role: arn:aws:iam::654654431435:role/testing`.
 * **Save arguments to samconfig.toml**: If set to yes, your choices will be saved to a configuration file inside the project, so that in the future you can just re-run `sam deploy` without parameters to deploy changes to your application.
 
 You can find your API Gateway Endpoint URL in the output values displayed after deployment.
@@ -66,6 +62,8 @@ Run functions locally and invoke them with the `sam local invoke` command.
 
 Add valid data to the `events/event.json` file and invoke the function locally.
 
+Bear in mind timeout is set to 30 seconds, if you need more time, you can change it in the `template.yaml` file.
+
 ```bash
 sam local invoke minisedric --event events/event.json
 ```
@@ -80,6 +78,13 @@ curl -X POST http://127.0.0.1:3000/mini_sedric  \
            "interaction_url": "{{ url }}",
            "trackers": {{ trackers }}
          }'
+
+```
+
+Example of S3 interaction url:
+```
+s3://rd-testing-bucher/Page06-Say-Thank-You.mp3
+https://rd-testing-bucher.s3.eu-central-1.amazonaws.com/Page06-Say-Thank-You.mp3
 
 ```
 
@@ -132,7 +137,7 @@ sam delete --stack-name {{ stack_name }}
 See the [AWS SAM developer guide](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html) for an introduction to SAM specification, the SAM CLI, and serverless application concepts.
 
 
-## Formatting 
+## Formatting
 
 This project uses ruff for linting and formatting. To format the code, run the following command within your venv:
 
@@ -147,4 +152,15 @@ This project uses mypy for static type checking. To check the types, run the fol
 
 ```
 mypy audio_parser --explicit-package-bases
+```
+
+## Pre-commit hooks
+
+Install pre-commit hooks by running the following command:
+```
+pre-commit install
+```
+Hooks will run automatically before each commit. To run the hooks manually, run the following command:
+```
+pre-commit run --all-files
 ```
